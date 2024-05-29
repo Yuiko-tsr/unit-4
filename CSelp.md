@@ -32,6 +32,57 @@ This quarter, we were tasked to create a Reddit kind of website where users can 
 
 ## Development
 
+### Register Page
+Here we have two key features. First is to comapre the entered username with the already registered username as two users with the same username could cause an issue with the profile or the follow user system. THis can easily be solved with the code below that first takes out all the usernames in the database and gives an error text if it doesn't apply.
+```.py
+existing_user = db.search(query=f"SELECT * FROM users WHERE user_name = '{uname}'", multiple=False)
+if existing_user:
+    error_text = "Username already taken. Please choose another username."
+```
+The second key feature is hashing the password when saving it into the database. Once the username has been confirmed, the user will be added into the databse. When doing so, we must make sure the password is hashed to maintain the security of the user information from malcious software. This can be done using the **make_hash** function below:
+```.py
+def make_hash(text:str):
+    return hasher.hash(text)
+```
+This is applied in the code below where once the username is confirmed and the passwords is also confirmed, we proceed into creating the hashed text and entering it into the database.
+```.py
+existing_user = db.search(query=f"SELECT * FROM users WHERE user_name = '{uname}'", multiple=False)
+if existing_user:
+    error_text = "Username already taken. Please choose another username."
+elif password != confirm_pass:
+    error_text = "Passwords do not match. Please try again."
+else:
+    hashed_pass = make_hash(password)
+    db.run_query(query=f"INSERT INTO users (user_name, user_pass) VALUES ('{uname}', '{hashed_pass}')")
+    return redirect(url_for('register_success'))
+
+```
+### Login Page
+Firstly in the login page we placed the password as **type="password"** to encrypt it when it is typed. This helps protect the user information when it is being entered by the user and prevents other people from physically seeing the typed password. This can be seen in the code below:
+HTML
+```.py
+<label for="psw"><b>Password</b></label>
+<input type="password" placeholder="Enter Password" name="psw" required>
+```
+
+Moreover, since the password has beeen hashed in the database, when loging in they must make sure that the hashed password is the same as the entered password. We can do this by using the pycharm code below:
+```.py
+def check_hash(input_hash, text):
+    return hasher.verify(text, input_hash)
+```
+
+In this code we can input hashed text and normal text and compare them to make sure they are the same. By using this we can successfully compare the two types of texts without an issue. This is applied in the code below:
+```.py
+if uname == row[1]:
+    if check_hash (row[2], password):
+        user_id = row[0]
+        session['user_id'] = user_id
+        print("user correctly logged in")
+        return redirect(url_for('index'))
+    else:
+        error_text = "Password does not match. Please try again."
+```
+
 ### Accessing Categories
 Here is the HTML for the food category screeen where you can see all the food in a table format with their ingredients, cusine, price and name. This table format allows users to easily view the list of foods with clarity and ease. Here I used a loop of the database and printed each  of the information.
 
