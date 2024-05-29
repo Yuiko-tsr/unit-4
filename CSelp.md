@@ -169,6 +169,7 @@ Furthermore, the simplicity of the design allows users of any age or technology 
 **To user**
 * This is an application that allows you to view comment on food and movies and add comments or delete comments. You can also follow or unfollow users and categories. Please test for easiness of use and any bugs that may occur.
 
+**User Feedback**
 * Marina Mendieta testing (Beta testing by developer):
 ** You should make sure that the comments can only be editted and deleted by the user that posted it. 
 * Miki Hayashi testing (Beta testing by non-developer):
