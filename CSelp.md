@@ -28,261 +28,55 @@ This quarter, we were tasked to create a Reddit kind of website where users can 
 3. Pochaco icon for the login page: https://www.sanrio.com/collections/pochacco
 4. Chat GPT for all the content of food and movies
 5. For profile page I used a template: https://themeforest.net/category/site-templates?term=profile%20page
+6. https://tadabase.io/blog/using-join-tables
 
 ## Development
 
-### Login/Register with hashed password
-The user
-```.py
-@app.route('/', methods=['GET','POST'])
-def login():  # put application's code here
-    error_text=""
-    if request.method == 'POST':
-        uname = request.form.get('uname')
-        password = request.form.get('psw')
-        db = DatabaseBridge('database.db')
-        results = db.search(query='Select * from users', multiple=True)
-        db.close()
-        print(results)
-        for row in results:
-            if uname == row[1]:
-                if check_hash (row[2], password):
-                    user_id = row[0]
-                    session['user_id'] = user_id
-                    print("user correctly logged in")
-                    return redirect(url_for('index'))
-                else:
-                    error_text = "Password does not match. Please try again."
-            else:
-                error_text = "No such username. Please try again."
-
-    return render_template('login.html', error=error_text)
-@app.route('/register', methods=['GET','POST'])
-def register():
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    error_text = ""
-    if request.method == 'POST':
-        uname = request.form.get('uname')
-        password = request.form.get('psw')
-        confirm_pass = request.form.get('psw_confirm')
-
-        # Check if username already exists
-        existing_user = db.search(query=f"SELECT * FROM users WHERE user_name = '{uname}'", multiple=False)
-        if existing_user:
-            error_text = "Username already taken. Please choose another username."
-        elif password != confirm_pass:
-            error_text = "Passwords do not match. Please try again."
-        else:
-            hashed_pass = make_hash(password)
-            db.run_query(query=f"INSERT INTO users (user_name, user_pass) VALUES ('{uname}', '{hashed_pass}')")
-            return redirect(url_for('register_success'))
-
-    return render_template('register.html', error=error_text)
-
-@app.route('/register/success', methods=['GET','POST'])
-def register_success():
-
-    return render_template('Register_success.html')
-```
-
-### Home screen
-```.py
-@app.route('/home')
-def index():
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    foodfollow = db.search(query=f"SELECT followfood FROM users WHERE id={user_id}",
-                      multiple=False)[0]
-    if foodfollow==0:
-        food_follow = "FOLLOW?"
-        my_class_food = 'btn-info'
-    else:
-        food_follow = "FOLLOWED"
-        my_class_food = 'btn-primary'
-    moviefollow = db.search(query=f"SELECT followmovie FROM users WHERE id={user_id}",
-                           multiple=False)[0]
-    if moviefollow == 0:
-        movie_follow = "FOLLOW?"
-        my_class = 'btn-info'
-    else:
-        movie_follow = "FOLLOWED"
-        my_class = 'btn-primary'
-
-
-    query = f"""SELECT user_name FROM users"""
-    users_list = db.search(query=query, multiple = True)
-    user_list = []
-    print('users_list',users_list)
-
-    for u in users_list:
-        print(u)
-
-        user_list += u
-    print('ok',user_list)
-    following = db.search(query=f'Select followed from following where following = {user_id}', multiple=True)
-    followed_users = ''
-    # print(following)
-    for user in following:
-        if followed_users !='':
-            followed_users += ','
-        # print(user[0])
-        followed_users += db.search(query=f'select user_name from users where id={int(user[0])}')[0]
-
-
-    print(followed_users)
-    user_list_html=[]
-    for u in user_list:
-        user_list_html.append([u, u in followed_users])
-
-    return render_template('index.html', users=user_list_html, my_class=my_class_food,myclass=my_class,food_follow = food_follow, movie_follow=movie_follow, followed_user=followed_users)
-
-```
 ### Accessing Categories
+Here is the HTML for the food category screeen where you can see all the food in a table format with their ingredients, cusine, price and name. This table format allows users to easily view the list of foods with clarity and ease. Here I used a loop of the database and printed each  of the information.
+
 ```.py
-@app.route('/food/all')
-def get_all_food():
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id  = session['user_id']
-    db = DatabaseBridge('database.db')
-    result = db.search(query=f'Select user_name from users where id ={user_id}', multiple=True)
-    user = result
-
-    db = DatabaseBridge('database.db')
-    results = db.search(query = 'Select * from foods', multiple=True)
-    db.close()
-    return render_template('foods.html',foods=results, name=user)
-
-@app.route('/food/<int:food_id>', methods={'GET','POST'})
-def get_food(food_id):
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    liked = db.search(query=f"SELECT * FROM likes WHERE food_id={food_id} AND user_id={user_id}",
-                      multiple=False)
-    print(liked)
-    if liked:
-        like = "liked"
-        my_class = 'btn-info'
-    else:
-        like = "like?"
-        my_class = 'btn-primary'
-
-    f = db.search(query=f"Select * from foods where id={food_id}", multiple=False)
-    print(f)
-    reviews = db.search(query=f"Select * from reviews where food_id={food_id}", multiple=True)
-    print(reviews)
-    if request.method == 'POST':
-        if 'submit' in request.form:
-            #the form was submitted with the new review
-            date = datetime.now().strftime('%Y/%b/%d')
-            comment = request.form.get('comment')
-            stars = request.form.get('stars')
-            query = f"""INSERT into reviews(date,comment,stars,food_id) values('{date}','{comment}',{stars},{food_id})"""
-            print(query)
-            db.insert(query=query)
-            db.close()
-            return redirect(url_for('get_food',food_id=food_id, like=like))
-
-
-    return render_template('food.html', food=f, reviews = reviews, like=like, my_class=my_class)
+<table class="table">
+    <tr>
+        <th>No</th>
+        <th>Name</th>
+        <th>Ingredients</th>
+        <th>Cusine</th>
+        <th>Price ($)</th>
+        <th>View More</th>
+    </tr>
+    {% for f in foods %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ f[1] }}</td>
+        <td>{{ f[2] }}</td>
+        <td>{{ f[4] }}</td>
+        <td>{{ f[3] }}</td>
+        <td><a class="btn btn-primary" href="{{ url_for('get_food',food_id=f[0]) }}">View More</a></td>
+    </tr>
+    {% endfor %}
+</table>
 ```
 
-### Edit/Create/Delete comment
-```.py
-@app.route('/food/<int:food_id>/review/<int:review_id>/edit', methods=['GET','POST'])
-def edit_review(review_id,food_id):
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    f = db.search(query=f"Select * from foods where id={food_id}", multiple=False)
-    # print(f)
-    reviews = db.search(query=f"Select * from reviews where food_id={food_id}", multiple=True)
-    review_to_edit = db.search(query=f"Select * from reviews where id={review_id}", multiple=False)
-    comments = review_to_edit[1]
-    stars = review_to_edit[3]
-    if request.method == 'POST': #update the review and redirect to the food page
-        comment = request.form.get('comment')
-        stars = request.form.get('stars')
-        db.run_query(f"UPDATE reviews set comment='{comment}', stars={stars} where id = {review_id}")
-        db.close()
-        return redirect(url_for('get_food',food_id=food_id))
-
-    db.close()
-    return render_template('food.html',food=f,reviews=reviews, comments=comments, stars=stars)
-
-@app.route('/food/<int:food_id>/review/<int:review_id>/delete')
-def delete_review(review_id, food_id):
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    db.run_query(f"DELETE from reviews where id = {review_id}")
-    db.close()
-    return redirect(url_for('get_food',food_id=food_id))
-```
-
-### Add/remove like
-```.py
-@app.route('/like/<int:food_id>',methods=['GET','POST'])
-def like(food_id):
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    liked = db.search(query=f"SELECT * FROM likes WHERE food_id={food_id} AND user_id={user_id}",
-                      multiple=False)
-    print(liked)
-    if liked:
-        # If already liked, remove the like
-        db.run_query(query=f"DELETE FROM likes WHERE food_id={food_id} AND user_id={user_id}")
-        like = "like?"
-    else:
-        # If not liked, add the like
-        db.insert(query=f"INSERT INTO likes (food_id, user_id) VALUES ({food_id}, {user_id})")
-        like = "liked"
-    return redirect(url_for('get_food', food_id=food_id, like=like))
-```
 
 ### Follow user/categories
+For the follow user system, I created a joined table that allows me to connect one user table to another without difficulty. Joined tables in a database are a way to combine data from multiple related tables into a single table. They are used to retrieve data that is spread across different tables, establish relationships between tables, normalize data by dividing it into multiple tables to avoid redundancy, and combine data from different sources or databases. [6] I used the **foreign key** variable to make sure that the variables were clearly associated to the user id and by joining tables, I was able to see which user followed which other user. The SQLite code is below:
 ```.py
-@app.route('/follow/food',methods=['GET','POST'])
-def follow():
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    liked = db.search(query=f"SELECT followfood FROM users WHERE id={user_id}",
-                      multiple=False)[0]
-    print(liked,'here')
-    if liked == 1:
-        # If already liked, remove the like
-        db.run_query(query=f"Update users set followfood = 0  where id={user_id}")
-        followfood = "FOllOW?"
-    else:
-        # If not liked, add the like
-        db.run_query(query=f"Update users set followfood = 1  where id={user_id}")
-        followfood = "FOLLOWED"
+create table if not exists following(
+    id integer primary key,
+    following integer,
+    followed integer,
+    foreign key (following) references users(id),
+    foreign key (followed) references users(id)
+);
+```
+After creating a table with **foreign key** I moved onto the pycharm code where I would look through this table and allow for the buttons on the HTML to follow or unfollow users according to their status. Therefore, I used an if statement where I asked whether the user had followed that specific user on the website and if they had the button would delete the followed history where it deletes the row of the two users from the database and if they hadnt followed they would add the followed history onto the database.
 
-    return redirect(url_for('index',food_follow = followfood))
-
+```.py
 @app.route('/follow/user/', methods=['GET', 'POST'])
 def follow_user():
     followed_user = request.args.get('followed_user')
-    print('followed_user',followed_user)
-    db = DatabaseBridge('database.db')
     followed_id = db.search(query=f"select id from users where user_name='{followed_user}'")[0]
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
     user_id = session['user_id']
     liked = db.search(query=f"SELECT * FROM following WHERE followed = {followed_id} and following={user_id}",
                       multiple=False)
@@ -292,36 +86,72 @@ def follow_user():
         db.run_query(query=f'delete from following where following = {user_id} and followed = {followed_id}')
     return redirect(url_for('index'))
 ```
-### Profile Page
+
+Moreover, to make things more visibly clear, I also added color specifications of whether the user had been followed or not. This can be seen below in the Pycharm code and later in the HTML code where I use another if statement where if the user had been followed the button class becomes red and the screen prints the words **FOLLOWED** while if they are not followed the button class becomes blue and the screen prints the words **FOLLOW?**. This design allows the users to visibly see their status with other users.
+
+Pycharm:
 ```.py
-@app.route('/profile')
-def profile():
-    if not session.get('user_id'):
-        return redirect(url_for('login'))
-    user_id = session['user_id']
-    db = DatabaseBridge('database.db')
-    user_me = db.search(query=f'select user_name from users where id={user_id}')
-    following = db.search(query=f'Select followed from following where following = {user_id}', multiple=True)
-    followed_users = []
-    # print(following)
-    for user in following:
+ following = db.search(query=f'Select followed from following where following = {user_id}', multiple=True)
+followed_users = ''
+# print(following)
+for user in following:
+    if followed_users !='':
+        followed_users += ','
+    # print(user[0])
+    followed_users += db.search(query=f'select user_name from users where id={int(user[0])}')[0]
 
-        # print(user[0])
-        followed_users += db.search(query=f'select user_name from users where id={int(user[0])}')
-    print(followed_users)
 
-    following_categories= ''
-    movie = db.search(query=f'select followmovie from users where id = {user_id}', multiple= False)[0]
-    if movie == 1:
-        following_categories += 'movie'
-    food = db.search(query=f'select followfood from users where id={user_id}',multiple=False)[0]
-    if food ==1:
-        if following_categories != '':
-            following_categories += ' and '
-        following_categories += 'food'
-    return render_template('profile.html',name=user_me, following_users = followed_users, following_categories=following_categories)
-
+print(followed_users)
+user_list_html=[]
+for u in user_list:
+    user_list_html.append([u, u in followed_users])
 ```
+
+HTML:
+```.py
+{% for user,status in users %}
+    <li>{{ user }}</li>
+    {% if status == True %}
+    <a class="btn btn-primary" href="{{url_for('follow_user', followed_user=user)}}">Followed</a>
+    {% else %}
+    <a class="btn btn-info" href="{{url_for('follow_user', followed_user=user)}}">Follow?</a>
+    {% endif %}
+{% endfor %}
+```
+Above is the code that devides the users into followed or not followed and they will change the color fo the button as seen **class="btn btn-primary"** and **class="btn btn-info"** according to the status of the user that is specified in the pycharm by the if statement.
+
+### Profile Page
+For this profile page, initially the html showed all users in one line. However, this was unpracticle as the number of users following increased, the line got longer and was hard to read. Therefore, I put the users in a for loop and for each user I printed them out as a list. This can be seen from the code bellow:
+```.py
+<ul class="follow-list">
+    {% for user in following_users %}
+        <li>{{ user }}</li>
+
+    {% endfor %}
+</ul>
+```
+by using the curly brackets in the HTML I was able to improve the usability of the page by making it more clear and easy to read.
+
+However, as for the categories, since we only have two I put them in one row as the design was illogical when the user had only followed one category. This is because bulletpoints usually consist of more than one row but when a user only follows one category it is only one row. Therefore, I put them in one row, separating them with an 'and' in the pycharm code and printing it directly in the HTML as shown bellow.
+HTML:
+```.py
+<p><strong>Followed Categories:</strong></p>
+<p style="text-indent: 60px;">{{ following_categories }}</p>
+```
+
+Pycharm:
+```.py
+following_categories= ''
+movie = db.search(query=f'select followmovie from users where id = {user_id}', multiple= False)[0]
+if movie == 1:
+    following_categories += 'movie'
+food = db.search(query=f'select followfood from users where id={user_id}',multiple=False)[0]
+if food ==1:
+    if following_categories != '':
+        following_categories += ' and '
+    following_categories += 'food'
+```
+In this Pycharm code I first created a variable called **following_categories** and added any categories that had been followed by the user. This way, I can easily print them out by sending the **following_categories** to the HTML which I do here: **<p style="text-indent: 60px;">{{ following_categories }}</p>**
 
 # Criteria D
 A 5 min video on the functionality of the code
@@ -335,8 +165,15 @@ Moreover, the tables used in the home page where users can navigate to view all 
 
 Furthermore, the simplicity of the design allows users of any age or technology familiarity to navigate through the system easily.
 
+# Beta testing
+**To user**
+* This is an application that allows you to view comment on food and movies and add comments or delete comments. You can also follow or unfollow users and categories. Please test for easiness of use and any bugs that may occur.
+
+* Marina testing (Beta testing by developer):
+* ThienThi testing (Beta testing by non-developer):
+
 # Recommendations for further improvement
-Below are some other functions that could be added for improvement
+Below are some other functions that could be added for improvement in the future
 * Posting images
 * Sending Emails
 * Forgot Password/Change Password functions
