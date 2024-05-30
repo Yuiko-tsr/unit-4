@@ -34,11 +34,13 @@ This quarter, we were tasked to create a Reddit kind of website where users can 
 
 ### Register Page
 Here we have two key features. First is to comapre the entered username with the already registered username as two users with the same username could cause an issue with the profile or the follow user system. THis can easily be solved with the code below that first takes out all the usernames in the database and gives an error text if it doesn't apply.
+
 ```.py
 existing_user = db.search(query=f"SELECT * FROM users WHERE user_name = '{uname}'", multiple=False)
 if existing_user:
     error_text = "Username already taken. Please choose another username."
 ```
+
 The second key feature is hashing the password when saving it into the database. Once the username has been confirmed, the user will be added into the databse. When doing so, we must make sure the password is hashed to maintain the security of the user information from malcious software. This can be done using the **make_hash** function below:
 ```.py
 def make_hash(text:str):
