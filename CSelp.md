@@ -161,7 +161,7 @@ for u in user_list:
 ```
 
 HTML:
-```.py
+```.html
 {% for user,status in users %}
     <li>{{ user }}</li>
     {% if status == True %}
@@ -175,7 +175,7 @@ Above is the code that devides the users into followed or not followed and they 
 
 ### Profile Page
 For this profile page, initially the html showed all users in one line. However, this was unpracticle as the number of users following increased, the line got longer and was hard to read. Therefore, I put the users in a for loop and for each user I printed them out as a list. This can be seen from the code bellow:
-```.py
+```.html
 <ul class="follow-list">
     {% for user in following_users %}
         <li>{{ user }}</li>
@@ -187,7 +187,7 @@ by using the curly brackets in the HTML I was able to improve the usability of t
 
 However, as for the categories, since we only have two I put them in one row as the design was illogical when the user had only followed one category. This is because bulletpoints usually consist of more than one row but when a user only follows one category it is only one row. Therefore, I put them in one row, separating them with an 'and' in the pycharm code and printing it directly in the HTML as shown bellow.
 HTML:
-```.py
+```.html
 <p><strong>Followed Categories:</strong></p>
 <p style="text-indent: 60px;">{{ following_categories }}</p>
 ```
