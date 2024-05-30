@@ -204,7 +204,7 @@ if food ==1:
         following_categories += ' and '
     following_categories += 'food'
 ```
-In this Pycharm code I first created a variable called **following_categories** and added any categories that had been followed by the user. This way, I can easily print them out by sending the **following_categories** to the HTML which I do here: **'<p style="text-indent: 60px;">{{ following_categories }}</p>'**
+In this Pycharm code I first created a variable called **following_categories** and added any categories that had been followed by the user. This way, I can easily print them out by sending the **following_categories** to the HTML which I do here: ``` <p style="text-indent: 60px;">{{ following_categories }}</p> ```
 
 # Criteria D
 A 5 min video on the functionality of the code
