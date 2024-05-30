@@ -62,7 +62,7 @@ else:
 ### Login Page
 Firstly in the login page we placed the password as **type="password"** to encrypt it when it is typed. This helps protect the user information when it is being entered by the user and prevents other people from physically seeing the typed password. This can be seen in the code below:
 HTML
-```.py
+```.html
 <label for="psw"><b>Password</b></label>
 <input type="password" placeholder="Enter Password" name="psw" required>
 ```
