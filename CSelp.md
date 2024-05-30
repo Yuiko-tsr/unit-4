@@ -224,7 +224,8 @@ Furthermore, the simplicity of the design allows users of any age or technology 
 
 **User Feedback**
 * Marina Mendieta testing (Beta testing by developer):
-** You should make sure that the comments can only be editted and deleted by the user that posted it. 
+    * Good UI, very promising if expanded further, aditionally it shows versatility since it has both foods and movies. I would add images for every post and possibly a posting system for the user.
+** You should make sure that the comments can only be edited and deleted by the user that posted it. 
 * Miki Hayashi testing (Beta testing by non-developer):
 ** Easy to navigate, clear design, maybe for the further improvement you could add on the all food page to see whether I have liked the specific category or not.
 
